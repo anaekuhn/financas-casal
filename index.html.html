@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FinançasCasal 💰</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Outfit', sans-serif; background: #0F0F1A; color: #E8E8F0; min-height: 100vh; display: flex; justify-content: center; }
+  #app { width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 2px; }
+
+  /* HEADER */
+  #header {
+    background: linear-gradient(135deg, #1A1A2E, #16213E);
+    padding: 16px 20px; border-bottom: 1px solid rgba(108,99,255,0.3);
+    display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .logo { font-size: 28px; }
+  .header-info .title { font-size: 16px; font-weight: 700; }
+  .header-info .status { font-size: 12px; color: #6C63FF; }
+  #saldo-badge { margin-left: auto; border-radius: 20px; padding: 4px 12px; font-size: 13px; font-weight: 700; display: none; }
+
+  /* TABS */
+  #tabs { display: flex; background: #1A1A2E; border-bottom: 1px solid rgba(108,99,255,0.2); }
+  .tab-btn { flex: 1; background: none; border: none; border-bottom: 2px solid transparent; color: #666; padding: 12px 8px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+  .tab-btn.active { color: #6C63FF; border-bottom-color: #6C63FF; font-weight: 700; }
+
+  /* PANELS */
+  .panel { padding: 16px; overflow-y: auto; display: none; flex: 1; }
+  .panel.active { display: block; }
+  .panel-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+
+  /* FORM */
+  #form-panel { display: block; }
+  .form-group { margin-bottom: 14px; }
+  label { font-size: 12px; color: #888; display: block; margin-bottom: 6px; }
+  input[type=text], input[type=number], select {
+    width: 100%; background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(108,99,255,0.3); border-radius: 10px;
+    padding: 11px 14px; color: #E8E8F0; font-size: 14px;
+    outline: none; font-family: inherit; appearance: none;
+  }
+  select option { background: #1A1A2E; color: #E8E8F0; }
+  .tipo-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tipo-btn {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; padding: 12px; color: #888; font-size: 14px;
+    cursor: pointer; font-family: inherit; text-align: center; transition: all 0.2s;
+  }
+  .tipo-btn.active-gasto { background: rgba(255,107,107,0.15); border-color: #FF6B6B; color: #FF6B6B; font-weight: 700; }
+  .tipo-btn.active-receita { background: rgba(46,204,113,0.15); border-color: #2ECC71; color: #2ECC71; font-weight: 700; }
+  .btn-submit {
+    width: 100%; background: linear-gradient(135deg, #6C63FF, #9B8FFF);
+    border: none; border-radius: 12px; padding: 14px;
+    color: #fff; font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: inherit; margin-top: 4px;
+    transition: opacity 0.2s;
+  }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .success-msg {
+    background: rgba(46,204,113,0.1); border: 1px solid #2ECC7133;
+    border-radius: 10px; padding: 12px; font-size: 14px; color: #2ECC71;
+    text-align: center; margin-top: 12px; display: none;
+  }
+
+  /* LANÇAMENTOS */
+  .empty-state { text-align: center; padding: 48px 24px; color: #444; background: rgba(255,255,255,0.02); border-radius: 14px; border: 1px dashed #2a2a3a; }
+  .empty-icon { font-size: 36px; margin-bottom: 10px; }
+  .tx-item { background: linear-gradient(135deg, #1C1C30, #222238); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+  .tx-icon { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+  .tx-info { flex: 1; min-width: 0; }
+  .tx-desc { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tx-meta { font-size: 11px; color: #666; margin-top: 2px; }
+  .tx-value { font-weight: 700; font-size: 15px; flex-shrink: 0; }
+  .tx-delete { background: none; border: none; color: #333; font-size: 16px; cursor: pointer; padding: 4px; flex-shrink: 0; transition: color 0.2s; }
+  .tx-delete:hover { color: #FF6B6B; }
+
+  /* RESUMO */
+  .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .card { background: linear-gradient(135deg, #1C1C30, #222238); border-radius: 14px; padding: 14px 16px; }
+  .card.full { grid-column: 1 / -1; }
+  .card-label { font-size: 12px; color: #666; margin-bottom: 4px; }
+  .card-value { font-size: 18px; font-weight: 700; }
+  .card.full .card-value { font-size: 22px; }
+  .cat-label { font-size: 13px; display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .cat-bar-bg { background: #1A1A2E; border-radius: 4px; height: 6px; margin-bottom: 12px; }
+  .cat-bar { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+
+  .loading-overlay { position: fixed; inset: 0; background: #0F0F1A; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 100; }
+  .loading-overlay .emoji { font-size: 48px; }
+  .loading-overlay p { color: #666; font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="emoji">💰</div>
+    <p>Carregando lançamentos...</p>
+  </div>
+
+  <div id="header">
+    <span class="logo">💰</span>
+    <div class="header-info">
+      <div class="title">FinançasCasal</div>
+      <div class="status">● Google Sheets conectado</div>
+    </div>
+    <div id="saldo-badge"></div>
+  </div>
+
+  <div id="tabs">
+    <button class="tab-btn active" data-tab="form">➕ Registrar</button>
+    <button class="tab-btn" data-tab="lancamentos">📋 Lançamentos</button>
+    <button class="tab-btn" data-tab="resumo">📈 Resumo</button>
+  </div>
+
+  <!-- FORM -->
+  <div class="panel active" id="form-panel">
+    <div class="panel-title">➕ Novo lançamento</div>
+
+    <div class="form-group">
+      <label>Tipo</label>
+      <div class="tipo-row">
+        <button class="tipo-btn active-gasto" id="btn-gasto" onclick="setTipo('gasto')">💸 Gasto</button>
+        <button class="tipo-btn" id="btn-receita" onclick="setTipo('receita')">💵 Receita</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Valor (R$)</label>
+      <input type="number" id="inp-valor" placeholder="0,00" min="0" step="0.01" />
+    </div>
+
+    <div class="form-group">
+      <label>Categoria</label>
+      <select id="inp-categoria">
+        <option value="">Selecione...</option>
+        <optgroup label="Gastos">
+          <option>Alimentação</option>
+          <option>Transporte</option>
+          <option>Moradia</option>
+          <option>Saúde</option>
+          <option>Lazer</option>
+          <option>Roupas</option>
+          <option>Educação</option>
+          <option>Assinaturas</option>
+          <option>Outros</option>
+        </optgroup>
+        <optgroup label="Receitas">
+          <option>Salário</option>
+          <option>Freelance</option>
+          <option>Investimentos</option>
+          <option>Presente</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Descrição</label>
+      <input type="text" id="inp-descricao" placeholder="Ex: mercado, conta de luz, salário..." />
+    </div>
+
+    <button class="btn-submit" id="btn-salvar" onclick="salvar()">Registrar lançamento</button>
+    <div class="success-msg" id="success-msg">✅ Lançamento salvo na planilha!</div>
+  </div>
+
+  <!-- LANÇAMENTOS -->
+  <div class="panel" id="lancamentos-panel">
+    <div class="panel-title">📋 Todos os lançamentos</div>
+    <div id="tx-list"></div>
+  </div>
+
+  <!-- RESUMO -->
+  <div class="panel" id="resumo-panel">
+    <div class="panel-title">📈 Resumo do mês</div>
+    <div class="cards-grid" id="resumo-cards"></div>
+    <div id="resumo-cats"></div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxIKBClRzoro2d5X1cXuIF3_Gt_5tHoUSk0ZOAMAayfN63wdrWzAD1Dj99ejeqMlS00/exec";
+const SENHA = "financascasal2024";
+
+const CAT_COLORS = {
+  Alimentação:"#FF6B6B",Transporte:"#4ECDC4",Moradia:"#45B7D1",Saúde:"#96CEB4",
+  Lazer:"#FFEAA7",Roupas:"#DDA0DD",Educação:"#98D8C8",Assinaturas:"#F7DC6F",
+  Salário:"#2ECC71",Freelance:"#3498DB",Investimentos:"#9B59B6",Presente:"#E74C3C",Outros:"#BDC3C7"
+};
+
+let transactions = [];
+let tipoAtual = "gasto";
+
+function setTipo(tipo) {
+  tipoAtual = tipo;
+  document.getElementById("btn-gasto").className = "tipo-btn" + (tipo === "gasto" ? " active-gasto" : "");
+  document.getElementById("btn-receita").className = "tipo-btn" + (tipo === "receita" ? " active-receita" : "");
+  // Atualiza categorias conforme tipo
+  const sel = document.getElementById("inp-categoria");
+  sel.value = "";
+}
+
+async function loadTransactions() {
+  try {
+    const res = await fetch(SCRIPT_URL + "?senha=" + SENHA);
+    const data = await res.json();
+    transactions = Array.isArray(data) ? data.reverse() : [];
+    renderTransactions();
+    renderResumo();
+    updateSaldoBadge();
+  } catch(e) {
+    console.error("Erro ao carregar:", e);
+  }
+  document.getElementById("loading-overlay").style.display = "none";
+}
+
+async function salvar() {
+  const valor = parseFloat(document.getElementById("inp-valor").value);
+  const categoria = document.getElementById("inp-categoria").value;
+  const descricao = document.getElementById("inp-descricao").value.trim();
+
+  if (!valor || valor <= 0) { alert("Informe um valor válido!"); return; }
+  if (!categoria) { alert("Selecione uma categoria!"); return; }
+  if (!descricao) { alert("Informe uma descrição!"); return; }
+
+  const btn = document.getElementById("btn-salvar");
+  btn.disabled = true;
+  btn.textContent = "Salvando...";
+
+  const t = {
+    action: "save",
+    data: new Date().toLocaleDateString("pt-BR"),
+    tipo: tipoAtual,
+    valor: valor,
+    categoria: categoria,
+    descricao: descricao
+  };
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(t)
+    });
+
+    // Adiciona localmente
+    transactions.unshift({ ...t });
+    renderTransactions();
+    renderResumo();
+    updateSaldoBadge();
+
+    // Limpa form
+    document.getElementById("inp-valor").value = "";
+    document.getElementById("inp-categoria").value = "";
+    document.getElementById("inp-descricao").value = "";
+
+    const msg = document.getElementById("success-msg");
+    msg.style.display = "block";
+    setTimeout(() => msg.style.display = "none", 3000);
+
+  } catch(e) {
+    alert("Erro ao salvar. Tente novamente.");
+  }
+
+  btn.disabled = false;
+  btn.textContent = "Registrar lançamento";
+}
+
+// TABS
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const tab = btn.dataset.tab;
+    document.getElementById("form-panel").classList.toggle("active", tab === "form");
+    document.getElementById("lancamentos-panel").classList.toggle("active", tab === "lancamentos");
+    document.getElementById("resumo-panel").classList.toggle("active", tab === "resumo");
+    if (tab === "lancamentos") renderTransactions();
+    if (tab === "resumo") renderResumo();
+  });
+});
+
+function renderTransactions() {
+  const list = document.getElementById("tx-list");
+  if (!transactions.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🤷</div><p style="font-size:14px">Nenhum lançamento ainda.</p><small style="color:#555;font-size:12px;margin-top:6px;display:block">Registre na aba ➕!</small></div>`;
+    return;
+  }
+  list.innerHTML = transactions.map((t, i) => {
+    const color = CAT_COLORS[t.categoria] || "#888";
+    const isRec = t.tipo === "receita";
+    return `<div class="tx-item" style="border:1px solid ${isRec?"#2ECC7133":"#FF6B6B22"}">
+      <div class="tx-icon" style="background:${color}18;border:2px solid ${color}66">${isRec?"💵":"💸"}</div>
+      <div class="tx-info">
+        <div class="tx-desc">${t.descricao}</div>
+        <div class="tx-meta"><span style="color:${color}">● ${t.categoria}</span> · ${t.data}</div>
+      </div>
+      <div class="tx-value" style="color:${isRec?"#2ECC71":"#FF6B6B"}">${isRec?"+":"-"}R$${Number(t.valor).toFixed(2)}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderResumo() {
+  const totalRec = transactions.filter(t=>t.tipo==="receita").reduce((s,t)=>s+Number(t.valor),0);
+  const totalGas = transactions.filter(t=>t.tipo==="gasto").reduce((s,t)=>s+Number(t.valor),0);
+  const saldo = totalRec - totalGas;
+  const sc = saldo >= 0 ? "#2ECC71" : "#FF6B6B";
+
+  document.getElementById("resumo-cards").innerHTML = `
+    <div class="card" style="border:1px solid #2ECC7122">
+      <div class="card-label">📈 Receitas</div>
+      <div class="card-value" style="color:#2ECC71">R$${totalRec.toFixed(2)}</div>
+    </div>
+    <div class="card" style="border:1px solid #FF6B6B22">
+      <div class="card-label">📉 Gastos</div>
+      <div class="card-value" style="color:#FF6B6B">R$${totalGas.toFixed(2)}</div>
+    </div>
+    <div class="card full" style="border:1px solid ${sc}33">
+      <div class="card-label">💰 Saldo disponível</div>
+      <div class="card-value" style="color:${sc}">R$${saldo.toFixed(2)}</div>
+    </div>`;
+
+  const cats = transactions.filter(t=>t.tipo==="gasto").reduce((acc,t)=>{ acc[t.categoria]=(acc[t.categoria]||0)+Number(t.valor); return acc; },{});
+  const sorted = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+
+  if (!sorted.length) { document.getElementById("resumo-cats").innerHTML = ""; return; }
+
+  document.getElementById("resumo-cats").innerHTML = `
+    <div style="font-size:13px;font-weight:600;color:#888;margin-bottom:12px">🏷️ Gastos por categoria</div>
+    ${sorted.map(([cat,val])=>{
+      const pct = totalGas > 0 ? (val/totalGas)*100 : 0;
+      const color = CAT_COLORS[cat]||"#888";
+      return `<div>
+        <div class="cat-label">
+          <span style="color:${color}">● ${cat}</span>
+          <span style="color:#aaa">R$${val.toFixed(2)} <span style="color:#444">(${pct.toFixed(0)}%)</span></span>
+        </div>
+        <div class="cat-bar-bg"><div class="cat-bar" style="width:${pct}%;background:${color}"></div></div>
+      </div>`;
+    }).join("")}`;
+}
+
+function updateSaldoBadge() {
+  const totalRec = transactions.filter(t=>t.tipo==="receita").reduce((s,t)=>s+Number(t.valor),0);
+  const totalGas = transactions.filter(t=>t.tipo==="gasto").reduce((s,t)=>s+Number(t.valor),0);
+  const saldo = totalRec - totalGas;
+  const badge = document.getElementById("saldo-badge");
+  if (transactions.length > 0) {
+    badge.style.display = "block";
+    badge.textContent = (saldo>=0?"+":"") + "R$" + saldo.toFixed(2);
+    badge.style.background = saldo>=0 ? "rgba(46,204,113,0.15)" : "rgba(255,107,107,0.15)";
+    badge.style.border = `1px solid ${saldo>=0?"#2ECC71":"#FF6B6B"}44`;
+    badge.style.color = saldo>=0 ? "#2ECC71" : "#FF6B6B";
+  }
+}
+
+loadTransactions();
+</script>
+</body>
+</html>
